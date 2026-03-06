@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     text_similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
     face_similarity_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
 
+    pipeline_concurrency: int = Field(default=1, ge=1)
+
     page_size_default: int = Field(default=20, ge=1)
     page_size_max: int = Field(default=100, ge=1)
 

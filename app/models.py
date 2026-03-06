@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -66,18 +66,31 @@ class TextSegment(Base):
     video: Mapped[Video] = relationship(back_populates="text_segments")
 
 
+class Face(Base):
+    __tablename__ = "faces"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alias: Mapped[str] = mapped_column(String(128), index=True)
+    embedding: Mapped[list[float]] = mapped_column(Vector(512))
+    image_blob: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    face_tracks: Mapped[list["FaceTrack"]] = relationship(back_populates="face")
+
+
 class FaceTrack(Base):
     __tablename__ = "face_tracks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     video_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("videos.id", ondelete="CASCADE"), index=True)
-    alias: Mapped[str] = mapped_column(String(128), index=True)
+    face_id: Mapped[int] = mapped_column(ForeignKey("faces.id", ondelete="CASCADE"), index=True)
     start_sec: Mapped[int] = mapped_column(Integer)
     end_sec: Mapped[int] = mapped_column(Integer)
     embedding: Mapped[list[float]] = mapped_column(Vector(512))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     video: Mapped[Video] = relationship(back_populates="face_tracks")
+    face: Mapped[Face] = relationship(back_populates="face_tracks")
     detected_faces: Mapped[list["DetectedFace"]] = relationship(back_populates="face_track")
 
 
