@@ -1,6 +1,7 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,3 +54,16 @@ async def detect_face(
         )
 
     return FaceDetectResponse(faces=items)
+
+
+@router.get("/{face_id}/image")
+async def get_face_image(
+    face_id: int,
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    face = await session.get(Face, face_id)
+    if not face:
+        raise HTTPException(status_code=404, detail="Face not found")
+    if not face.image_blob:
+        raise HTTPException(status_code=404, detail="Face image not found")
+    return Response(content=face.image_blob, media_type="image/jpeg")
